@@ -1,0 +1,108 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(tidyr)
+library(dplyr)
+if (!requireNamespace("car", quietly = TRUE)) {
+  install.packages("car")
+}
+library(car)
+```
+
+
+```{r}
+historical_data <- data.frame(
+  Site_A = c(45, 38, 31, 32, 34, 26),
+  Site_B = c(56, 50, 42, 42, 36, 23),
+  Site_C = c(67, 56, 58, 54, 46, 48),
+  Site_D = c(62, 57, 64, 61, 64, 58),
+  Year = c(2000, 2004, 2008, 2012, 2016, 2020)
+)
+
+# Reshape the DataFrame for ANOVA
+df_melt <- historical_data %>%
+  gather(key = "Site", value = "BreedingPairs", -Year)
+
+# Fit the ANOVA model
+anova_model <- lm(BreedingPairs ~ as.factor(Site) + as.factor(Year), data = df_melt)
+
+# Perform ANOVA
+anova_table <- Anova(anova_model, type = "II")
+
+# Extract necessary values
+total_df <- anova_table$"Sum Sq"[4] + anova_table$"Df"[4]
+total_sum_sq <- sum(anova_table$"Sum Sq")
+mean_sq_site <- anova_table$"Sum Sq"[1] / anova_table$"Df"[1]
+mean_sq_year <- anova_table$"Sum Sq"[2] / anova_table$"Df"[2]
+mean_sq_residual <- anova_table$"Sum Sq"[3] / anova_table$"Df"[3]
+f_value_site <- mean_sq_site / mean_sq_residual
+f_value_year <- mean_sq_year / mean_sq_residual
+p_value_site <- anova_table$"Pr(>F)"[1]
+p_value_year <- anova_table$"Pr(>F)"[2]
+
+# Display results
+results_table <- data.frame(
+  Source = c('Site', 'Year', 'Residuals', 'Total'),
+  DF = c(anova_table$"Df"[1], anova_table$"Df"[2], anova_table$"Df"[3], total_df),
+  Sum_Sq = c(anova_table$"Sum Sq"[1], anova_table$"Sum Sq"[2], anova_table$"Sum Sq"[3], total_sum_sq),
+  Mean_Sq = c(mean_sq_site, mean_sq_year, mean_sq_residual, ''),
+  F_Value = c(f_value_site, f_value_year, '', ''),
+  Pr_F = c(p_value_site, p_value_year, '', '')
+)
+
+print(results_table)
+```
+
+
+```{r}
+site_a <- historical_data$Site_A
+site_b <- historical_data$Site_B
+site_c <- historical_data$Site_C
+site_d <- historical_data$Site_D
+# Perform two-sample t-test
+t_test_1 <- t.test(site_a, site_b, var.equal = FALSE)
+cat("Two sample t-test between Site A and Site B. \n")
+cat("T-statistic:", t_test_1$statistic, "\n")
+cat("P-value:", t_test_1$p.value, "\n")
+```
+
+
+```{r}
+t_test_2 <- t.test(site_a, site_c, var.equal = FALSE)
+cat("Two sample t-test between Site A and Site C. \n")
+cat("T-statistic:", t_test_2$statistic, "\n")
+cat("P-value:", t_test_2$p.value, "\n")
+```
+
+
+```{r}
+t_test_3 <- t.test(site_a, site_d, var.equal = FALSE)
+cat("Two sample t-test between Site A and Site D. \n")
+cat("T-statistic:", t_test_3$statistic, "\n")
+cat("P-value:", t_test_3$p.value, "\n")
+```
+
+
+```{r}
+interp_function <- approxfun(historical_data$Year, historical_data$Site_C, method = "linear", rule = 2)
+
+# Predict the number of breeding pairs at Site C in 2011
+prediction_2011 <- interp_function(2011)
+
+# Print the estimate
+cat("Estimated breeding pairs at Site C in 2011:", prediction_2011, "\n")
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

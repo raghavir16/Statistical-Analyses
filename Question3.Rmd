@@ -1,0 +1,146 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+install.packages("readxl")
+library(readxl)
+
+library(ggplot2)
+```
+
+
+```{r}
+if (!requireNamespace("GGally", quietly = TRUE)) {
+  install.packages("GGally")
+}
+library(GGally)
+```
+
+
+```{r}
+df <- readxl::read_excel("/Users/raghavi/Documents/Measurement.xls")
+
+
+ggpairs(df[1:4], aes(color = 'Sub-species', alpha = 0.5),upper = list(combo = "facetdensity"))
+
+```
+
+
+```{r}
+
+# Create separate data frames for each sub-species
+data1 <- df[df$`Sub-species` == 'Black-legged', ]
+data2 <- df[df$`Sub-species` == 'Red-legged', ]
+
+# Calculate correlation within each dataset
+correlation_matrix1 <- cor(data1[c('Wingspan', 'Culmen')])
+correlation_matrix2 <- cor(data2[c('Wingspan', 'Culmen')])
+
+# Function to get data for annotations
+get_annot_data <- function(correlation_matrix) {
+  data.frame(
+    Var1 = rep(rownames(correlation_matrix), each = ncol(correlation_matrix)),
+    Var2 = rep(colnames(correlation_matrix), times = nrow(correlation_matrix)),
+    Freq = as.vector(correlation_matrix),
+    stringsAsFactors = FALSE
+  )
+}
+
+# Create a heatmap for data1 with annotations
+ggplot(data = as.data.frame(as.table(correlation_matrix1)), aes(x = Var1, y = Var2, fill = Freq)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "blue", high = "red", limits = c(-1, 1)) +
+  geom_text(aes(label = round(Freq, 2)), vjust = 1) +  # Add annotations
+  theme_minimal() +
+  labs(title = 'Correlation Heatmap for Black-legged Kittiwakes', x = 'Variables', y = 'Variables', fill = 'Correlation') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Create a heatmap for data2 with annotations
+ggplot(data = as.data.frame(as.table(correlation_matrix2)), aes(x = Var1, y = Var2, fill = Freq)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "blue", high = "red", limits = c(-1, 1)) +
+  geom_text(aes(label = round(Freq, 2)), vjust = 1) +  # Add annotations
+  theme_minimal() +
+  labs(title = 'Correlation Heatmap for Red-legged Kittiwakes', x = 'Variables', y = 'Variables', fill = 'Correlation') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+# Extract weights for each sub-species
+weights_black_legged <- data1$Weight
+weights_red_legged <- data2$Weight
+
+# Perform two-sample t-test
+t_test_result <- t.test(weights_black_legged, weights_red_legged, var.equal = FALSE)
+
+# Print the results
+cat('T-statistic:', t_test_result$statistic, '\n')
+cat('P-value:', t_test_result$p.value, '\n')
+
+# Check significance level (e.g., 0.05)
+if (t_test_result$p.value < 0.05) {
+  cat('There is evidence that the weights of birds of the two sub-species are different.\n')
+} else {
+  cat('There is no significant evidence that the weights of birds of the two sub-species are different.\n')
+}
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+# Extract wingspan data for each sub-species
+wing_black_legged <- data1$Wingspan
+wing_red_legged <- data2$Wingspan
+
+# Perform two-sample t-test
+t_test_result <- t.test(wing_black_legged, wing_red_legged, var.equal = FALSE)
+
+# Print the results
+cat("T-statistic:", t_test_result$statistic, "\n")
+cat("P-value:", t_test_result$p.value, "\n")
+
+# Check significance level (e.g., 0.05)
+if (t_test_result$p.value < 0.05) {
+  cat('There is evidence that the wingspan of birds of the two sub-species are different.\n')
+} else {
+  cat('There is no significant evidence that the wingspan of birds of the two sub-species are different.\n')
+}
+```
+
+
+```{r}
+# Extract culmen data for each sub-species
+culmen_black_legged <- data1$Culmen
+culmen_red_legged <- data2$Culmen
+
+# Perform two-sample t-test
+t_test_result <- t.test(culmen_black_legged, culmen_red_legged, var.equal = FALSE)
+
+# Print the results
+cat("T-statistic:", t_test_result$statistic, "\n")
+cat("P-value:", t_test_result$p.value, "\n")
+
+# Check significance level (e.g., 0.05)
+if (t_test_result$p.value < 0.05) {
+  cat('There is evidence that the culmen of birds of the two sub-species are different.\n')
+} else {
+  cat('There is no significant evidence that the culmen of birds of the two sub-species are different.\n')
+}
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

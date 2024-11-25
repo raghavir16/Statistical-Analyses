@@ -1,0 +1,144 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+location_data <- data.frame(
+  Coast.direction = c("North", "North", "East", "West", "South", "East", "South", "West", "East", "West", 
+                      "South", "East", "North", "East", "South", "South", "East", "North", "North", "South", "West", 
+                      "East", "East", "West", "North", "South", "East", "North", "North", "South", "South"),
+  sandeel = c(1.68, 1.06, 2.15, 2.45, 1.18, 1.75, 0.78, 0.73, 2.41, 0.85, 2.52, 1.31, 2.75, 1.76, 1.91, 2.07, 
+              2.47, 2.8, 2.17, 1.9, 3, 1.77, 2.98, 2.6, 1.11, 2.26, 1.1, 2.93, 1.91, 0.91, 1.89),
+  Summer.temp = c(22.4, 21.1, 22.6, 20.3, 21.9, 21.7, 24.4, 25.7, 25.4, 19.7, 23.9, 20.5, 24.9, 18.7, 20.6, 24.3, 
+                  29.2, 21.9, 21.7, 23.9, 24.4, 18.2, 20.8, 21.7, 22.2, 25.5, 21.9, 20.5, 17.6, 25.8, 21.9),
+  cliff.height = c(3.68, 2.88, 2.67, 2, 3.11, 3.09, 3.12, 3.17, 3.41, 2.7, 3.21, 3.14, 3.3, 3.44, 3.07, 2.75, 
+                   2.74, 3.23, 3.12, 3.28, 2.33, 2.2, 2.82, 3, 2.59, 3.61, 3.33, 3.48, 2.81, 2.09, 3.33),
+  Breeding.pairs = c(40, 13, 40, 10, 36, 56, 44, 28, 105, 18, 42, 84, 23, 84, 32, 39, 47, 26, 28, 30, 13, 12, 
+                     35, 27, 11, 52, 68, 17, 19, 13, 37)
+)
+
+
+```
+
+
+```{r}
+install.packages("caret")
+install.packages("caretEnsemble")
+library(caret)
+library(caretEnsemble)
+```
+
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+location_data <- location_data %>%
+  mutate(Breeding.pairs = as.integer(Breeding.pairs))
+
+# Convert columns 2 to 4 to float
+location_data <- location_data %>%
+  mutate(across(2:4, as.double))
+reduced_data <- subset(location_data, select = -Coast.direction)
+head(reduced_data)
+```
+
+
+```{r}
+install.packages("ggcorrplot")
+library(ggcorrplot)
+```
+
+
+```{r}
+# Compute correlation at 2 decimal places
+corr_matrix = round(cor(reduced_data), 2)
+
+# Compute and show the  result
+ggcorrplot(corr_matrix, hc.order = TRUE, type = "lower",
+          lab = TRUE)
+```
+
+
+```{r}
+location_data$Coast.direction <- as.factor(location_data$Coast.direction)
+model = lm(formula = Breeding.pairs ~ Coast.direction + cliff.height + Summer.temp + sandeel, data = location_data)
+summary(model)
+
+residuals <- residuals(model)
+
+#Scatter plot of residuals against fitted values
+plot(fitted(model), residuals, main = "Residuals vs Fitted Values",
+     xlab = "Fitted Values", ylab = "Residuals")
+
+
+abline(h = 0, col = "red", lty = 2)
+
+# Actual vs predicted
+actual_values <- location_data$Breeding.pairs  # Replace with your actual data
+predicted_values <- predict(model)
+
+#Scatter plot of actual vs. predicted values
+plot(actual_values, predicted_values, main = "Actual vs Predicted Values",
+     xlab = "Actual Values", ylab = "Predicted Values")
+
+
+abline(0, 1, col = "red", lty = 2)
+
+
+```
+
+
+```{r}
+second_model = lm(formula = log(Breeding.pairs) ~ Coast.direction + cliff.height + Summer.temp + sandeel, data = location_data)
+summary(second_model)
+
+residuals <- residuals(second_model)
+
+#Scatter plot of residuals against fitted values
+plot(fitted(second_model), residuals, main = "Residuals vs Fitted Values",
+     xlab = "Fitted Values", ylab = "Residuals")
+
+
+abline(h = 0, col = "red", lty = 2)
+
+# Actual vs predicted
+actualvalues <- location_data$Breeding.pairs  # Replace with your actual data
+predictedvalues <- predict(second_model)
+
+#Scatter plot of actual vs. predicted values
+plot(actualvalues, predictedvalues, main = "Actual vs Predicted Values",
+     xlab = "Actual Values", ylab = "Predicted Values")
+
+
+```
+
+
+```{r}
+
+#Data frame with the predictor values for the specific site
+new_data <- data.frame(Coast.direction = "South", sandeel = 1.28, Summer.temp = 27.4, cliff.height = 3.46)
+
+# Predict the log-transformed breeding pairs
+predicted_log <- predict(second_model, newdata = new_data, interval = "confidence", level = 0.98)
+
+# Transform the confidence interval back to the original scale
+predicted_original <- exp(predicted_log)
+
+print(predicted_original)
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
