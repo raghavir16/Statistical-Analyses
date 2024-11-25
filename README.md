@@ -1,6 +1,6 @@
 # Statistical-Analyses
 
-This repository contains the statistical analysis of kittiwake data. The analysis explores observational, historical, measurement, and location-based data for two sub-species of kittiwakes: black-legged and red-legged. Key insights include:
+This repository contains the statistical analysis of kittiwake data using R. The analysis explores observational, historical, measurement, and location-based data for two sub-species of kittiwakes: black-legged and red-legged. Key insights include:
 
 1. Exploratory analysis of observational data and confidence interval construction.
 2. Evaluation of trends in historical data and estimation of breeding pair numbers.
